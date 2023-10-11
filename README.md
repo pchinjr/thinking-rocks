@@ -130,9 +130,11 @@ This project is open-source and available under the [MIT License](LICENSE).
 
 ## Acknowledgements
 
-- OpenAI's ChatGPT for guidance and assistance in refining the bot's logic.
-- Streamlit for providing a platform to turn the bot into a web application, making it more accessible to users.
-- NLTK library for NLP tools and utilities.
+- **OpenAI's ChatGPT**: For guidance and assistance in refining the bot's logic.
+- **Streamlit**: For providing a platform to turn the bot into a web application, making it more accessible to users.
+- **NLTK library**: For NLP tools and utilities.
+- **BeautifulSoup**: For its invaluable web scraping capabilities, enabling the extraction of relevant content.
+- **LangChain**: For their advanced language processing capabilities which significantly enhanced the quality and relevance of our application's outputs.
 
 ---
 
