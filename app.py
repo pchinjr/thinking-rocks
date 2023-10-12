@@ -203,12 +203,10 @@ def extract_relevant_urls_from_search(search_results, company_name, role):
             relevant_urls.append(url)
     return relevant_urls
 
-def generate_interview_questions_from_content(objective, content):
-    """
-    Use the agent to analyze the content and generate potential interview questions.
-    """
+def generate_interview_questions_from_content(role, content):
+
     # Define a prompt for the agent to generate questions based on the content
-    prompt = f"Based on the following content related to {objective}, generate potential interview questions:\n\n{content}\n\nQuestions:"
+    prompt = f"Based on the following content related to {role}, generate potential interview questions:\n\n{content}\n\nQuestions:"
     
     # Use the agent to generate questions
     response = agent.run(prompt)
@@ -227,16 +225,6 @@ def extract_keywords_from_description(description):
     keywords = [word.lower() for word in words if word.isalpha() and word.lower() not in stop_words]
     
     return keywords
-
-def generate_questions_from_job_description(job_description):
-    # Extract key responsibilities and qualifications from the job description
-    # and generate interview questions based on them.
-    # This is a simplified version and can be enhanced further.
-    responsibilities = [line for line in job_description.split('\n') if line]
-    questions_from_description = []
-    for responsibility in responsibilities:
-        questions_from_description.append(f"How have you demonstrated {responsibility.lower()} in your previous roles?")
-    return questions_from_description
 
 def filter_irrelevant_questions(questions):
     # We can add more conditions based on feedback to improve filtering.
@@ -286,7 +274,7 @@ def research_interview_questions(company_name, role, job_description):
         loop_count += 1
 
     # Extract keywords from job description
-    job_description_keywords = ["coding", "design", "algorithm", "system", "database", "programming", "debugging", "machine learning"]
+    job_description_keywords = extract_keywords_from_description(job_description)
     
     # Filter out irrelevant questions
     relevant_questions = [q for q in all_questions if is_relevant_question(q, job_description_keywords)]
