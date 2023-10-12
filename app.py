@@ -1,11 +1,11 @@
 import json
-from typing import Type
 import requests
 import streamlit as st
 import nltk
+from typing import Type
+from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from bs4 import BeautifulSoup
 from langchain.prompts import PromptTemplate
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
@@ -22,7 +22,9 @@ from pydantic import BaseModel, Field
 browserless_api_key = st.secrets["BROWSERLESS_API_KEY"]
 serper_api_key = st.secrets["SERP_API_KEY"]
 
+# Download the Punkt tokenizer models used by NLTK for sentence splitting.
 nltk.download('punkt')
+# Download the list of stopwords from NLTK, used to filter out common words.
 nltk.download('stopwords')
 
 # Search Tool
@@ -64,14 +66,23 @@ def scrape_website(objective, url):
         print(f"HTTP request failed with status code {response.status_code}")
         print("Response text:", response.text)
         return None
-    
-def summary(objective, content):
-    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
+# Summary Tool
+def summary(objective, content):
+    # Initialize the ChatOpenAI model with specific parameters
+    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+    
+    # Create an instance of RecursiveCharacterTextSplitter, which breaks the content 
+    # into smaller chunks suitable for processing, based on the provided separators
     text_splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500
     )
+    
+    # Split the content into smaller documents using the text_splitter
     docs = text_splitter.create_documents([content])
+    
+    # Define the prompt template for summarization, where the model is asked
+    # to summarize the provided text for a specific objective
     map_prompt = """
     Write a summary of the following text for {objective}:
     "{text}"
@@ -80,7 +91,8 @@ def summary(objective, content):
     map_prompt_template = PromptTemplate(
         template=map_prompt, input_variables=["text", "objective"]
     )
-
+    
+    # Load the summarization chain with the defined prompt and the ChatOpenAI model
     summary_chain = load_summarize_chain(
         llm=llm,
         chain_type="map_reduce",
@@ -88,30 +100,43 @@ def summary(objective, content):
         combine_prompt=map_prompt_template,
         verbose=True,
     )
-
+    
+    # Run the summary chain to generate the summary of the content based on the objective
     output = summary_chain.run(input_documents=docs, objective=objective)
-
     return output
 
+# Define a data model for the input of the scrape_website function
 class ScrapeWebsiteInput(BaseModel):
     """Inputs for scrape_website"""
-
+    
+    # Field to specify the objective or task for the scraping
     objective: str = Field(
         description="The objective & task that users give to the agent"
     )
+    
+    # Field to specify the URL of the website to be scraped
     url: str = Field(description="The url of the website to be scraped")
 
+# Define a class to handle website scraping operations
 class ScrapeWebsiteTool(BaseTool):
+    # Name of the tool
     name = "scrape_website"
-    description = "useful when you need to get data from a website url, passing both url and objective to the function; DO NOT make up any url, the url should only be from the search results"
+    
+    # A brief description of the tool
+    description = ("useful when you need to get data from a website url, "
+                   "passing both url and objective to the function; DO NOT "
+                   "make up any url, the url should only be from the search results")
+    
+    # Define the expected input schema for the tool
     args_schema: Type[BaseModel] = ScrapeWebsiteInput
 
+    # Define the main function that runs the tool
     def _run(self, objective: str, url: str):
         return scrape_website(objective, url)
 
+    # Define an asynchronous function, which is currently not implemented
     def _arun(self, url: str):
         raise NotImplementedError("error here")
-
 
 # 3. Create langchain agent with the tools above
 tools = [
@@ -136,23 +161,34 @@ system_message = SystemMessage(
             6/ In the final output, You should include all reference data & links to back up your research; You should include all reference data & links to back up your research"""
 )
 
+# Define additional arguments for initializing the ChatGPT agent
 agent_kwargs = {
+    # Include extra prompt messages, specifically a placeholder for 'memory' which stores past interactions
     "extra_prompt_messages": [MessagesPlaceholder(variable_name="memory")],
+    
+    # Define a system message that may be used to set the behavior or context for the agent
     "system_message": system_message,
 }
 
+# Initialize the ChatOpenAI (language model) instance with specific parameters
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+
+# Set up a buffer memory to store a summary of the conversation, which helps in retaining context across interactions
 memory = ConversationSummaryBufferMemory(
-    memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000
+    memory_key="memory", # Key to identify the memory buffer
+    return_messages=True, # Indicate whether to return past messages
+    llm=llm, # Associate the language model instance
+    max_token_limit=1000 # Set a maximum token limit for the stored messages
 )
 
+# Initialize the agent using specified tools, language model, and other configurations
 agent = initialize_agent(
-    tools,
-    llm,
-    agent=AgentType.OPENAI_FUNCTIONS,
-    verbose=True,
-    agent_kwargs=agent_kwargs,
-    memory=memory,
+    tools, # List of tools or functions available for the agent to use
+    llm, # Language model instance
+    agent=AgentType.OPENAI_FUNCTIONS, # Type of agent being initialized
+    verbose=True, # Set to True to enable detailed logging
+    agent_kwargs=agent_kwargs, # Additional agent-specific arguments
+    memory=memory, # The buffer memory instance
 )
 
 # Extract relevant URLs from search results
