@@ -1,6 +1,8 @@
 # thinking-rocks
 
-Thinking Rocks
+Thinking rocks when you use thinking rocks.
+
+["how we turn sand into intelligence" - THE best video on CPUs](https://www.youtube.com/watch?v=m6pJNW_jpw0)
 
 ## External APIs
 
@@ -26,7 +28,7 @@ Interview Prep Bot is a tool designed to assist job seekers in preparing for int
 
 ### Prerequisites
 
-- Python 3.x
+- Python 3.1x
 - Pipenv
 
 ### Installation
@@ -59,9 +61,6 @@ streamlit run app.py
 ```
 
 3. Navigate to the displayed URL in your web browser to access the Interview Prep Bot.
-
-Certainly! Here's how you can append to the existing README.md to include the process of creating environment secrets in `.streamlit/secrets.toml`:
-
 ---
 
 ## Environment Secrets with Streamlit
@@ -123,10 +122,6 @@ During the development of Interview Prep Bot, we encountered several challenges:
 ## Contributing
 
 If you'd like to contribute, please fork the repository and make changes as you'd like. Pull requests are warmly welcome.
-
-## License
-
-This project is open-source and available under the [MIT License](LICENSE).
 
 ## Acknowledgements
 
