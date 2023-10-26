@@ -203,16 +203,16 @@ def extract_relevant_urls_from_search(search_results, company_name, role):
             relevant_urls.append(url)
     return relevant_urls
 
-def generate_interview_questions_from_content(role, content):
+def generate_interview_questions_from_content(role, content, job_description):
 
     # Define a prompt for the agent to generate questions based on the content
-    prompt = f"Based on the following content related to {role}, generate potential interview questions:\n\n{content}\n\nQuestions:"
+    prompt = f"Based on the following content related to {role} and job description of: {job_description}, what questions are likely to be asked during an interview:\n\n{content}\n\nQuestions:"
     
     # Use the agent to generate questions
-    response = agent.run(prompt)
-    
+    response = agent({"input": prompt})
+    output = response["output"]
     # Extract questions from the agent's response
-    questions = [q.strip() for q in response.split('\n') if q.strip()]
+    questions = [q.strip() for q in output.split('\n') if q.strip()]
     
     return questions
 
@@ -226,13 +226,9 @@ def extract_keywords_from_description(description):
     
     return keywords
 
-def filter_irrelevant_questions(questions):
-    # We can add more conditions based on feedback to improve filtering.
-    return [q for q in questions if len(q.split()) > 6 and not q.startswith("Can you describe")]
-
 def is_relevant_question(question, job_description_keywords):
     # List of irrelevant question starters
-    irrelevant_starts = ["Can you share", "Were there", "How would you approach answering", "Can you explain how"]
+    irrelevant_starts = ["Can you share", "Were there", "How would you approach answering", "Can you explain how", "Based on"]
     
     # Check if the question starts with any of the irrelevant starts
     if any(question.startswith(start) for start in irrelevant_starts):
@@ -258,6 +254,9 @@ def research_interview_questions(company_name, role, job_description):
     all_questions = []
     loop_limit = 3
     loop_count = 0
+
+    # Extract keywords from job description
+    job_description_keywords = extract_keywords_from_description(job_description)
     
     for url in relevant_urls:
         if loop_count >= loop_limit:
@@ -269,13 +268,10 @@ def research_interview_questions(company_name, role, job_description):
         if content:
             # Feedback to the user
             print("Generating interview questions based on the scraped content...")
-            questions = generate_interview_questions_from_content(role, content)
+            questions = generate_interview_questions_from_content(role, content, job_description_keywords)
             all_questions.extend(questions)
         loop_count += 1
 
-    # Extract keywords from job description
-    job_description_keywords = extract_keywords_from_description(job_description)
-    
     # Filter out irrelevant questions
     relevant_questions = [q for q in all_questions if is_relevant_question(q, job_description_keywords)]
 
@@ -285,7 +281,12 @@ def research_interview_questions(company_name, role, job_description):
 
 def clean_question_numbering(question):
     # Splitting the question into words and rejoining them with spaces.
-    return ' '.join(question.split()[1:]) if question.split()[0][-1] == '.' else question
+    cleaned = ' '.join(question.split()[1:]) if question.split()[0][-1] == '.' else question
+    
+    # Splitting the cleaned question by line, converting to a set to remove duplicates, and rejoining.
+    cleaned = '\n'.join(set(cleaned.split('\n')))
+    
+    return cleaned
 
 def is_experience_question(question):
     # Keywords that typically indicate past experience questions
